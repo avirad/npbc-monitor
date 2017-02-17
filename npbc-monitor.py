@@ -1,22 +1,20 @@
+#!/usr/bin/python
+
+import os
+import time
+import multiprocessing
+import serialworker
+import json
+import sqlite3
+import settings
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
 import tornado.gen
 from tornado.options import define, options
-import os
-import time
-import multiprocessing
-import serialworker
-import json
 
-## Change this to match your local settings
-SERIAL_PORT = 'COM1'
-SERIAL_BAUDRATE = 9600
-WEB_UI_PORT = 8080
-##
-
-define("port", default=WEB_UI_PORT, help="run on the given port", type=int)
+define("port", default=settings.WEB_UI_PORT, help="run on the given port", type=int)
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -27,10 +25,16 @@ class StaticFileHandler(tornado.web.RequestHandler):
         self.render('main.js')
 
 if __name__ == '__main__':
+    ## Initialize database
+    dbconn = sqlite3.connect(settings.DATABASE)
+    dbconn.execute("CREATE TABLE IF NOT EXISTS [BurnerLogs] ([Date] DATETIME PRIMARY KEY)")
+    dbconn.commit()
+
     ## start the serial worker in background (as a deamon)
-    sp = serialworker.SerialProcess(SERIAL_PORT, SERIAL_BAUDRATE)
+    sp = serialworker.SerialProcess(settings.SERIAL_PORT, settings.SERIAL_BAUDRATE)
     sp.daemon = True
     sp.start()
+
     tornado.options.parse_command_line()
     app = tornado.web.Application(
         handlers=[
