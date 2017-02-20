@@ -1,2 +1,2 @@
 @ECHO OFF
-python npbc-monitor.py
+python npbc_monitor.py

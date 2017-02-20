@@ -5,6 +5,8 @@ import time
 import multiprocessing
 import settings
 import sqlite3
+import npbc_communication
+import binascii
 
 class SerialProcess(multiprocessing.Process):
     def __init__(self, serial_port, serial_baudrate):
@@ -27,6 +29,8 @@ class SerialProcess(multiprocessing.Process):
 
         while True:
             print "serialworker..."
+            request = npbc_communication.GeneralInformationCommand().getRequest()
+            print binascii.hexlify(request)
             dbconn = sqlite3.connect(settings.DATABASE)
             dbconn.execute("INSERT INTO [BurnerLogs] ([Date]) VALUES (datetime())")
             dbconn.commit()
