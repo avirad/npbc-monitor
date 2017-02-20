@@ -29,7 +29,7 @@ class SerialProcess(multiprocessing.Process):
 
         while True:
             print "serialworker..."
-            request = npbc_communication.GeneralInformationCommand().getRequest()
+            request = npbc_communication.generalInformationCommand().getRequestData()
             print binascii.hexlify(request)
             dbconn = sqlite3.connect(settings.DATABASE)
             dbconn.execute("INSERT INTO [BurnerLogs] ([Date]) VALUES (datetime())")
