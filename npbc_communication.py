@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from datetime import datetime
+
 class failResponse(object):
     pass
 
@@ -12,23 +14,24 @@ class successResponse(object):
 class generalInformationResponse(successResponse):
     def __init__(self, data):
         super(generalInformationResponse, self).__init__(data)
-        self.SwVer = None
-        self.Date = None
-        self.Mode = None
-        self.State = None
-        self.Status = None
-        self.IgnitionFail = None
-        self.PelletJam = None
-        self.Tset = None
-        self.Tboiler = None
-        self.Flame = None
-        self.Heater = None
-        self.CHPump = None
-        self.BF = None
-        self.FF = None
-        self.Fan = None
-        self.Power = None
-        self.ThermostatStop = None
+        self.SwVer = "{0:X}".format(data[1])[:1] + "." + "{0:X}".format(data[1])[1:]
+        self.Date = datetime(2000 + int("{0:X}".format(data[7])), int("{0:X}".format(data[6])), int("{0:X}".format(data[5])),
+                                    int("{0:X}".format(data[2])), int("{0:X}".format(data[3])), int("{0:X}".format(data[4])))
+        self.Mode = data[8]
+        self.State = data[9]
+        self.Status = data[10]
+        self.IgnitionFail = (data[13] & (1 << 0)) != 0
+        self.PelletJam = (data[13] & (1 << 5)) != 0
+        self.Tset = data[16]
+        self.Tboiler = data[17]
+        self.Flame = data[20]
+        self.Heater = (data[21] & (1 << 1)) != 0
+        self.CHPump = (data[21] & (1 << 3)) != 0
+        self.BF = (data[21] & (1 << 4)) != 0
+        self.FF = (data[21] & (1 << 5)) != 0
+        self.Fan = data[23]
+        self.Power = data[24]
+        self.ThermostatStop = (data[25] & (1 << 7)) != 0
 
 
 class commandBase(object):
