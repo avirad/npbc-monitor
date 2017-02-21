@@ -111,9 +111,32 @@ class generalInformationCommand(commandBase):
         return super(generalInformationCommand, self).getRequestData(bytearray())
 
     def processResponseData(self, response):
-        responseData = super(generalInformationCommand, self).processResponseData(response)
+        try:
+            responseData = super(generalInformationCommand, self).processResponseData(response)
+        except:
+            self.IsSuccessful = False
 
         if (self.IsSuccessful == True):
             return generalInformationResponse(responseData)
         else:
-            return failResponse
+            return failResponse()
+
+
+class setBoilerTemperatureCommand(commandBase):
+    def __init__(self, boilerTemperature):
+        super(setBoilerTemperatureCommand, self).__init__(0x07)
+        self.__boilerTemperature = boilerTemperature
+
+    def getRequestData(self):
+        return super(setBoilerTemperatureCommand, self).getRequestData(bytearray(self.__boilerTemperature))
+
+    def processResponseData(self, response):
+        try:
+            responseData = super(setBoilerTemperatureCommand, self).processResponseData(response)
+        except:
+            self.IsSuccessful = False
+
+        if (self.IsSuccessful == True and len(responseData) == 1 and responseData[0] == 0x34):
+            return successResponse(responseData)
+        else:
+            return failResponse()

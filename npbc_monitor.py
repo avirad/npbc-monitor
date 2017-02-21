@@ -31,7 +31,7 @@ if __name__ == '__main__':
     dbconn.commit()
 
     ## start the serial worker in background (as a deamon)
-    sp = serialworker.SerialProcess(settings.SERIAL_PORT, settings.SERIAL_BAUDRATE)
+    sp = serialworker.SerialProcess()
     sp.daemon = True
     sp.start()
 
