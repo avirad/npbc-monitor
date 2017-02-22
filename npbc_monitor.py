@@ -24,11 +24,32 @@ class StaticFileHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('main.js')
 
+def initializeDatabase():
+    dbconn = sqlite3.connect(settings.DATABASE)
+    dbconn.execute("CREATE TABLE IF NOT EXISTS [BurnerLogs] ( \
+                           [Timestamp] DATETIME PRIMARY KEY, \
+                           [SwVer] NVARCHAR NOT NULL, \
+                           [Date] DATETIME NOT NULL, \
+                           [Mode] INTEGER NOT NULL, \
+                           [State] INTEGER NOT NULL, \
+                           [Status] INTEGER NOT NULL, \
+                           [IgnitionFail] TINYINT NOT NULL, \
+                           [PelletJam] TINYINT NOT NULL, \
+                           [Tset] INTEGER NOT NULL, \
+                           [Tboiler] INTEGER NOT NULL, \
+                           [Flame] INTEGER NOT NULL, \
+                           [Heater] TINYINT NOT NULL, \
+                           [CHPump] TINYINT NOT NULL, \
+                           [BF] TINYINT NOT NULL, \
+                           [FF] TINYINT NOT NULL, \
+                           [Fan] INTEGER NOT NULL, \
+                           [Power] INTEGER NOT NULL, \
+                           [ThermostatStop] TINYINT NOT NULL)")
+    dbconn.commit()
+
 if __name__ == '__main__':
     ## Initialize database
-    dbconn = sqlite3.connect(settings.DATABASE)
-    dbconn.execute("CREATE TABLE IF NOT EXISTS [BurnerLogs] ([Date] DATETIME PRIMARY KEY)")
-    dbconn.commit()
+    initializeDatabase()
 
     ## start the serial worker in background (as a deamon)
     sp = serialworker.SerialProcess()

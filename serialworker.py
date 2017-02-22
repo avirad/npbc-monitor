@@ -16,6 +16,8 @@ class SerialProcess(multiprocessing.Process):
         sp = serial.Serial(settings.SERIAL_PORT, settings.SERIAL_BAUDRATE, timeout=1)
         print "communicating on port: " + sp.portstr
 
+        dbconn = sqlite3.connect(settings.DATABASE)
+
         while (sp.is_open):
             try:
                 time.sleep(0.1)
@@ -41,20 +43,14 @@ class SerialProcess(multiprocessing.Process):
                     if (isinstance(response, npbc_communication.generalInformationResponse)):
                         print "generalInformationResponse() received"
 
+                        params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
+                                   response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop]
+
+                        dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
+                                               [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                        dbconn.commit()
+
             except Exception, e1:
                 print "error communicating...: " + str(e1)
 
-            #request = npbc_communication.generalInformationCommand().getRequestData()
-            #print binascii.hexlify(request)
-
-            #response = npbc_communication.generalInformationCommand().processResponseData(bytearray([0x5A, 0x6A, 0x1D, 0x16, 0x14, 0x12, 0x53, 0x07, 0x1B, 0x18, 0x1D, 0x09, 0x09, 0x0D, 0x0B, 0x8C,
-            #                        0x0D, 0x0E, 0x0F, 0x4C, 0x46, 0x92, 0x13, 0x14, 0x1D, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0xB7]))
-            #print binascii.hexlify(response.RawData)
-
-            #response = npbc_communication.setBoilerTemperatureCommand(59).processResponseData(bytearray([0x5A, 0x5A, 0x02, 0x34, 0xCA]))
-            #print binascii.hexlify(response.RawData)
-
-            dbconn = sqlite3.connect(settings.DATABASE)
-            dbconn.execute("INSERT INTO [BurnerLogs] ([Date]) VALUES (datetime())")
-            dbconn.commit()
             time.sleep(5)
