@@ -20,9 +20,22 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('index.html')
 
-class StaticFileHandler(tornado.web.RequestHandler):
+class GetInfoHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('main.js')
+        dbconn = sqlite3.connect(settings.DATABASE)
+        cursor = dbconn.cursor()
+        cursor.row_factory=sqlite3.Row
+        cursor.execute("SELECT [Timestamp], [Date], [Power] FROM [BurnerLogs]")
+
+        result = []
+        rows = cursor.fetchall()
+        for row in rows:
+            d = dict(zip(row.keys(), row))
+            result.append(d)
+
+        self.write(json.dumps(result))
+        self.set_header("Content-Type", "application/json")
+        cursor.connection.close()
 
 def initializeDatabase():
     dbconn = sqlite3.connect(settings.DATABASE)
@@ -60,7 +73,7 @@ if __name__ == '__main__':
     app = tornado.web.Application(
         handlers=[
             (r"/", IndexHandler),
-            (r"/static/(.*)", tornado.web.StaticFileHandler, {'path':  './'})
+            (r"/api/getInfo", GetInfoHandler)
         ]
     )
     httpServer = tornado.httpserver.HTTPServer(app)

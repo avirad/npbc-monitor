@@ -1,9 +1,92 @@
 <!DOCTYPE HTML>
 <html>
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <meta charset="utf-8">
+    <title>NPBC-Monitor</title>
+    <!-- Bootstrap core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+
+    <script type="text/javascript">
+	window.onload = function () {
+
+		// dataPoints
+		var dataPoints1 = [];
+
+		var chart = new CanvasJS.Chart("chartContainer",{
+			zoomEnabled: true,
+			title: {
+				text: ""
+			},
+			toolTip: {
+				shared: true
+
+			},
+			legend: {
+				verticalAlign: "top",
+				horizontalAlign: "center",
+                                fontSize: 14,
+				fontWeight: "bold",
+				fontFamily: "calibri",
+				fontColor: "dimGrey"
+			},
+			data: [{
+				type: "line",
+				xValueType: "dateTime",
+				showInLegend: true,
+				name: "Feeder Work Time",
+				dataPoints: dataPoints1
+			}],
+                        legend:{
+                          cursor:"pointer",
+                          itemclick : function(e) {
+                            if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                              e.dataSeries.visible = false;
+                            }
+                            else {
+                              e.dataSeries.visible = true;
+                            }
+                            chart.render();
+                          }
+                        }
+		});
+
+		var updateInterval = 5000;
+
+		var updateChart = function (count) {
+                    $.getJSON("/api/getInfo", function(data) {
+                         dataPoints1.length = 0;
+                         $.each(data, function(key, value) {
+                             dataPoints1.push({x: Date.parse(value.Timestamp), y: value.Power});
+                         });
+
+                         chart.render();
+                    });
+		};
+
+		updateChart();
+		 
+		// update chart after specified interval 
+		setInterval(function(){updateChart()}, updateInterval);
+	}
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
   </head>
   <body>
-    <h1>Hello</h1>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="active"><a href="#home" role="tab" data-toggle="tab">Home</a></li>
+      <li><a href="#settings" role="tab" data-toggle="tab">Settings</a></li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content">
+      <div class="tab-pane active" id="home">
+        <div id="chartContainer" style="height: 500px; width: 80%;"></div>
+      </div>
+      <div class="tab-pane" id="settings">...</div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
   </body>
 </html>
