@@ -25,7 +25,7 @@ class GetInfoHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT [Timestamp], [Date], [Power] FROM [BurnerLogs]")
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power] FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-12 hours')")
 
         result = []
         rows = cursor.fetchall()
