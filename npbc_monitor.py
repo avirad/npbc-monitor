@@ -25,7 +25,27 @@ class GetInfoHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power] FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-12 hours')")
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [SwVer], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Mode], [State], [Status], \
+                               [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop] \
+                          FROM [BurnerLogs] WHERE [Timestamp] = (SELECT max([Timestamp]) FROM [BurnerLogs])")
+
+        result = []
+        rows = cursor.fetchall()
+        for row in rows:
+            d = dict(zip(row.keys(), row))
+            result.append(d)
+
+        self.write(json.dumps(result))
+        self.set_header("Content-Type", "application/json")
+        cursor.connection.close()
+
+class GetStatsHandler(tornado.web.RequestHandler):
+    def get(self):
+        dbconn = sqlite3.connect(settings.DATABASE)
+        cursor = dbconn.cursor()
+        cursor.row_factory=sqlite3.Row
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power] \
+                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-12 hours')")
 
         result = []
         rows = cursor.fetchall()
@@ -73,7 +93,8 @@ if __name__ == '__main__':
     app = tornado.web.Application(
         handlers=[
             (r"/", IndexHandler),
-            (r"/api/getInfo", GetInfoHandler)
+            (r"/api/getInfo", GetInfoHandler),
+            (r"/api/getStats", GetStatsHandler)
         ]
     )
     httpServer = tornado.httpserver.HTTPServer(app)

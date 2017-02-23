@@ -53,7 +53,7 @@
 		var updateInterval = 5000;
 
 		var updateChart = function (count) {
-                    $.getJSON("/api/getInfo", function(data) {
+                    $.getJSON("/api/getStats", function(data) {
                          dataPoints1.length = 0;
                          $.each(data, function(key, value) {
                              dataPoints1.push({x: Date.parse(value.Timestamp), y: value.Power});
@@ -81,7 +81,24 @@
     <!-- Tab panes -->
     <div class="tab-content">
       <div class="tab-pane active" id="home">
-        <div id="chartContainer" style="height: 500px; width: 80%;"></div>
+        <div class="panel-group">
+
+          <div class="panel panel-default">
+            <div class="panel-heading">Current state</div>
+            <div class="panel-body">
+              <button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-fire"></span> Flame</button>
+              <button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-star"></span> Power</button>
+            </div>
+          </div>
+
+          <div class="panel panel-default">
+            <div class="panel-heading">Last 12 hours stats</div>
+            <div class="panel-body">
+              <div id="chartContainer" style="height: 500px; width: 80%;"></div>
+            </div>
+          </div>
+
+        </div>
       </div>
       <div class="tab-pane" id="settings">...</div>
     </div>
