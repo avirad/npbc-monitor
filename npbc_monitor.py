@@ -45,7 +45,7 @@ class GetStatsHandler(tornado.web.RequestHandler):
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
         cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power] \
-                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-12 hours')")
+                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-2 hours')")
 
         result = []
         rows = cursor.fetchall()

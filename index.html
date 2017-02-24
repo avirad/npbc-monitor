@@ -1,6 +1,6 @@
-<!DOCTYPE HTML>
+﻿<!DOCTYPE HTML>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <title>NPBC-Monitor</title>
     <!-- Bootstrap core CSS -->
@@ -36,74 +36,113 @@
 				name: "Power",
 				dataPoints: dataPoints1
 			}],
-                        legend:{
-                          cursor:"pointer",
-                          itemclick : function(e) {
-                            if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                              e.dataSeries.visible = false;
-                            }
-                            else {
-                              e.dataSeries.visible = true;
-                            }
-                            chart.render();
-                          }
-                        }
+            legend:{
+                cursor:"pointer",
+                itemclick : function(e) {
+                if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                }
+                else {
+                    e.dataSeries.visible = true;
+                }
+                chart.render();
+                }
+            }
 		});
 
 		var updateInterval = 5000;
 
-		var updateChart = function (count) {
-                    $.getJSON("/api/getStats", function(data) {
-                         dataPoints1.length = 0;
-                         $.each(data, function(key, value) {
-                             dataPoints1.push({x: Date.parse(value.Timestamp), y: value.Power});
-                         });
+		var updateInfo = function () {
+		    $.getJSON("/api/getInfo", function (data) {
+		        $('#spFlame').text(data[0].Flame);
 
-                         chart.render();
-                    });
+		        var power = '';
+		        switch (data[0].Power) {
+		            case 0: power = ''; break;
+		            case 1: power = 'Suspend'; break;
+		            case 2: power = 'Power 1'; break;
+		            case 3: power = 'Power 2'; break;
+		            case 4: power = 'Power 3'; break;
+		        };
+
+		        var status = '';
+		        switch (data[0].Status) {
+		            case 0: status = 'Idle'; break;
+		            case 1: status = 'Fan Cleaning'; break;
+		            case 2: status = 'Cleaner'; break;
+		            case 3: status = 'Wait'; break;
+		            case 4: status = 'Loading'; break;
+		            case 5: status = 'Heating'; break;
+		            case 6: status = 'Ignition1'; break;
+		            case 7: status = 'Ignition2'; break;
+		            case 8: status = 'Unfolding'; break;
+		            case 9: status = 'Burning'; break;
+		            case 10: status = 'Extinction'; break;
+		        };
+
+		        $('#spPower').text(status + (power.length > 0 ? " / " : "") + power);
+            });
+
+            $.getJSON("/api/getStats", function (data) {
+                dataPoints1.length = 0;
+                $.each(data, function (key, value) {
+                    dataPoints1.push({ x: Date.parse(value.Timestamp), y: value.Power });
+                });
+
+                chart.render();
+            });
 		};
 
-		updateChart();
-		 
-		// update chart after specified interval 
-		setInterval(function(){updateChart()}, updateInterval);
+		updateInfo();
+
+		// update chart after specified interval
+		setInterval(function () { updateInfo() }, updateInterval);
 	}
     </script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script>
-  </head>
-  <body>
+</head>
+<body>
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-      <li class="active"><a href="#home" role="tab" data-toggle="tab">Home</a></li>
-      <li><a href="#settings" role="tab" data-toggle="tab">Settings</a></li>
+        <li class="active"><a href="#home" role="tab" data-toggle="tab">Home</a></li>
+        <li><a href="#settings" role="tab" data-toggle="tab">Settings</a></li>
     </ul>
 
     <!-- Tab panes -->
     <div class="tab-content">
-      <div class="tab-pane active" id="home">
-        <div class="panel-group">
-
-          <div class="panel panel-default">
-            <div class="panel-heading">Current state</div>
-            <div class="panel-body">
-              <button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-fire"></span> Flame</button>
-              <button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-star"></span> Power</button>
+        <div class="tab-pane active" id="home">
+            <div class="container-fluid" style="padding-top:10px">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Current state</div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-fire"></span> <span id="spFlame" style="padding-left:10px">Flame</span></button>
+                                    </div>
+                                    <div class="col">
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-signal"></span> <span id="spPower" style="padding-left:10px">Power</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Last 2 hours</div>
+                            <div class="panel-body">
+                                <div id="chartContainer" style="height: 400px; width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div class="panel panel-default">
-            <div class="panel-heading">Last 12 hours stats</div>
-            <div class="panel-body">
-              <div id="chartContainer" style="height: 500px; width: 80%;"></div>
-            </div>
-          </div>
-
         </div>
-      </div>
-      <div class="tab-pane" id="settings">...</div>
+        <div class="tab-pane" id="settings">...</div>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-  </body>
+</body>
 </html>

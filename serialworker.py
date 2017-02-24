@@ -39,7 +39,15 @@ class SerialProcess(multiprocessing.Process):
 
         dbconn = sqlite3.connect(settings.DATABASE)
 
+        responseData = bytearray(random.choice(self.testGIResponses))
+        n = 0
+
         while (sp.is_open):
+            n = n + 1
+            if (n > 12):
+                responseData = bytearray(random.choice(self.testGIResponses))
+                n = 0
+
             try:
                 time.sleep(0.1)
                 sp.reset_input_buffer()
@@ -50,7 +58,6 @@ class SerialProcess(multiprocessing.Process):
                 sp.write(requestData)
 
                 time.sleep(0.5)
-                responseData = bytearray(random.choice(self.testGIResponses))
                 if (sp.in_waiting > 0):
                     responseData = bytearray(sp.read(sp.in_waiting))
 
