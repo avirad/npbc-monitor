@@ -3,6 +3,7 @@
 import os
 import time
 import multiprocessing
+from multiprocessing.managers import BaseManager
 import serialworker
 import json
 import sqlite3
@@ -13,38 +14,62 @@ import tornado.web
 import tornado.websocket
 import tornado.gen
 from tornado.options import define, options
+import npbc_communication
 
 define("port", default=settings.WEB_UI_PORT, help="run on the given port", type=int)
+
+burnerStatus = None
+
+class BurnerStatus(object):
+    def __init__(self):
+        self.BurnerResponse = None
+
+    def SetBurnerStatus(self, response):
+        self.BurnerResponse = response
+
+    def GetBurnerStatus(self):
+        return self.BurnerResponse
+
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('index.html')
 
+
 class GetInfoHandler(tornado.web.RequestHandler):
     def get(self):
-        dbconn = sqlite3.connect(settings.DATABASE)
-        cursor = dbconn.cursor()
-        cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [SwVer], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Mode], [State], [Status], \
-                               [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop] \
-                          FROM [BurnerLogs] WHERE [Timestamp] = (SELECT max([Timestamp]) FROM [BurnerLogs])")
+        result = {}
+        status = burnerStatus.GetBurnerStatus()
 
-        result = []
-        rows = cursor.fetchall()
-        for row in rows:
-            d = dict(zip(row.keys(), row))
-            result.append(d)
+        if (isinstance(status, npbc_communication.generalInformationResponse)):
+            result['SwVer'] = status.SwVer
+            result['Date'] = status.Date.isoformat()
+            result['Mode'] = status.Mode
+            result['State'] = status.State
+            result['Status'] = status.Status
+            result['IgnitionFail'] = status.IgnitionFail
+            result['PelletJam'] = status.PelletJam
+            result['Tset'] = status.Tset
+            result['Tboiler'] = status.Tboiler
+            result['Flame'] = status.Flame
+            result['Heater'] = status.Heater
+            result['CHPump'] = status.CHPump
+            result['BF'] = status.BF
+            result['FF'] = status.FF
+            result['Fan'] = status.Fan
+            result['Power'] = status.Power
+            result['ThermostatStop'] = status.ThermostatStop
 
         self.write(json.dumps(result))
         self.set_header("Content-Type", "application/json")
-        cursor.connection.close()
+
 
 class GetStatsHandler(tornado.web.RequestHandler):
     def get(self):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power] \
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler], [ThermostatStop] \
                           FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-2 hours')")
 
         result = []
@@ -56,6 +81,7 @@ class GetStatsHandler(tornado.web.RequestHandler):
         self.write(json.dumps(result))
         self.set_header("Content-Type", "application/json")
         cursor.connection.close()
+
 
 def initializeDatabase():
     dbconn = sqlite3.connect(settings.DATABASE)
@@ -84,8 +110,14 @@ if __name__ == '__main__':
     ## Initialize database
     initializeDatabase()
 
+    manager = BaseManager()
+    manager.register('BurnerStatus', BurnerStatus)
+    manager.start()
+
+    burnerStatus = manager.BurnerStatus()
+
     ## start the serial worker in background (as a deamon)
-    sp = serialworker.SerialProcess()
+    sp = serialworker.SerialProcess(burnerStatus)
     sp.daemon = True
     sp.start()
 
