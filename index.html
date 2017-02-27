@@ -15,6 +15,12 @@
 	    var dataPointsTboiler = [];
 	    var dataPointsThermostatStop = [];
 
+	    Highcharts.setOptions({
+	        global: {
+	            useUTC: false
+	        }
+	    });
+
 	    var chart = new Highcharts.chart('chartContainer', {
 	        title: {
                 text: null
