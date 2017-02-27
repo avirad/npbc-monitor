@@ -13,7 +13,6 @@
 	    var dataPointsFlame = [];
 	    var dataPointsTset = [];
 	    var dataPointsTboiler = [];
-	    var dataPointsThermostatStop = [];
 
 	    Highcharts.setOptions({
 	        global: {
@@ -31,15 +30,22 @@
 	        yAxis: [{
 	            title: {
 	                text: 'Temperature (°C)'
-	            }
-	        }, {
-	            labels: {
-                    enabled: false
 	            },
+	            min: 0
+	        }, {
 	            title: {
 	                text: null
 	            },
-                max: 4
+	            visible: false,
+                min: 0,
+	            max: 10
+	        }, {
+	            title: {
+	                text: null
+	            },
+	            visible: false,
+	            min: 0,
+	            max: 300
 	        }],
 	        legend: {
 	            align: 'right',
@@ -47,20 +53,45 @@
 	            borderWidth: 0
 	        },
 	        series: [{
-	            name: 'Power',
-	            type: 'line',
-	            yAxis: 1,
-	            data: dataPointsPower
-	        }, {
 	            name: 'Tset',
-	            type: 'line',
-	            yAxis: 0,
+	            type: 'spline',
+	            color: 'blue',
+	            shadow: {
+	                color: 'gray',
+	                width: 10,
+	                offsetX: 0,
+	                offsetY: 0
+	            },
 	            data: dataPointsTset
 	        }, {
 	            name: 'Tboiler',
-	            type: 'line',
-	            yAxis: 0,
+	            type: 'spline',
+	            color: 'red',
+	            shadow: {
+	                color: 'gray',
+	                width: 10,
+	                offsetX: 0,
+	                offsetY: 0
+	            },
 	            data: dataPointsTboiler
+	        }, {
+	            name: 'Flame',
+	            type: 'spline',
+	            yAxis: 2,
+	            color: 'orange',
+	            shadow: {
+	                color: 'gray',
+	                width: 10,
+	                offsetX: 0,
+	                offsetY: 0
+	            },
+	            data: dataPointsFlame
+	        }, {
+	            name: 'Power',
+	            type: 'column',
+	            yAxis: 1,
+	            color: 'darkorange',
+	            data: dataPointsPower
 	        }]
 	    });
 
@@ -108,20 +139,19 @@
                 dataPointsFlame.length = 0;
                 dataPointsTset.length = 0;
                 dataPointsTboiler.length = 0;
-                dataPointsThermostatStop.length = 0;
 
                 $.each(data, function (key, value) {
                     dataPointsPower.push([ Date.parse(value.Timestamp), value.Power ]);
                     dataPointsFlame.push([ Date.parse(value.Timestamp), value.Flame ]);
                     dataPointsTset.push([ Date.parse(value.Timestamp), value.Tset ]);
                     dataPointsTboiler.push([ Date.parse(value.Timestamp), value.Tboiler ]);
-                    dataPointsThermostatStop.push([ Date.parse(value.Timestamp), value.ThermostatStop ]);
                 });
 
 
-                chart.series[0].setData(dataPointsPower, false);
-                chart.series[1].setData(dataPointsTset, false);
-                chart.series[2].setData(dataPointsTboiler, false);
+                chart.series[0].setData(dataPointsTset, false);
+                chart.series[1].setData(dataPointsTboiler, false);
+                chart.series[2].setData(dataPointsFlame, false);
+                chart.series[3].setData(dataPointsPower, false);
                 chart.redraw();
             });
 		};
