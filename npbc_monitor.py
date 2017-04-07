@@ -88,7 +88,7 @@ class GetConsumptionStatsHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT datetime(t.[Date]) AS [TimeStamp], \
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(t.[Date])) AS [Timestamp], \
                                ifnull((SELECT SUM([FFWorkTime]) \
                                          FROM [BurnerLogs] AS BL \
                                         WHERE BL.[TimeStamp] BETWEEN datetime(t.[Date]) AND datetime(t.[Date], '+3599 seconds')), \

@@ -6,133 +6,165 @@
     <!-- Bootstrap core CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
     <script type="text/javascript">
-	window.onload = function () {
+    window.onload = function () {
 
-	    // dataPoints
-	    var dataPointsPower = [];
-	    var dataPointsFlame = [];
-	    var dataPointsTset = [];
+        // dataPoints
+        var dataPointsPower = [];
+        var dataPointsFlame = [];
+        var dataPointsTset = [];
         var dataPointsTboiler = [];
         var dataPointsFFWorkTime = [];
 
-	    Highcharts.setOptions({
-	        global: {
-	            useUTC: false
-	        }
-	    });
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
 
-	    var chart = new Highcharts.chart('chartContainer', {
-	        title: {
+        var chart = new Highcharts.chart('chartContainer', {
+            title: {
                 text: null
-	        },
-	        xAxis: {
-	            type: 'datetime'
-	        },
-	        yAxis: [{
-	            title: {
-	                text: 'Temperature (°C)'
-	            },
-	            min: 0
-	        }, {
-	            title: {
-	                text: null
-	            },
-	            visible: false,
+            },
+            xAxis: {
+                type: 'datetime'
+            },
+            yAxis: [{
+                title: {
+                    text: 'Temperature (°C)'
+                },
+                min: 0
+            }, {
+                title: {
+                    text: null
+                },
+                visible: false,
                 min: 0,
-	            max: 10
-	        }, {
-	            title: {
-	                text: null
-	            },
-	            visible: false,
-	            min: 0,
-	            max: 300
-	        }],
-	        legend: {
-	            align: 'right',
-	            verticalAlign: 'bottom',
-	            borderWidth: 0
-	        },
-	        series: [{
-	            name: 'Tset',
-	            type: 'spline',
-	            color: 'blue',
-	            shadow: {
-	                color: 'gray',
-	                width: 10,
-	                offsetX: 0,
-	                offsetY: 0
-	            },
-	            data: dataPointsTset
-	        }, {
-	            name: 'Tboiler',
-	            type: 'spline',
-	            color: 'red',
-	            shadow: {
-	                color: 'gray',
-	                width: 10,
-	                offsetX: 0,
-	                offsetY: 0
-	            },
-	            data: dataPointsTboiler
-	        }, {
-	            name: 'Flame',
-	            type: 'spline',
-	            yAxis: 2,
-	            color: 'orange',
-	            shadow: {
-	                color: 'gray',
-	                width: 10,
-	                offsetX: 0,
-	                offsetY: 0
-	            },
-	            data: dataPointsFlame
-	        }, {
-	            name: 'Power',
-	            type: 'column',
-	            yAxis: 1,
-	            color: 'darkorange',
-	            data: dataPointsPower
-	        }]
-	    });
+                max: 10
+            }, {
+                title: {
+                    text: null
+                },
+                visible: false,
+                min: 0,
+                max: 300
+            }],
+            legend: {
+                align: 'right',
+                verticalAlign: 'bottom',
+                borderWidth: 0
+            },
+            series: [{
+                name: 'Tset',
+                type: 'spline',
+                color: 'blue',
+                shadow: {
+                    color: 'gray',
+                    width: 10,
+                    offsetX: 0,
+                    offsetY: 0
+                },
+                data: dataPointsTset
+            }, {
+                name: 'Tboiler',
+                type: 'spline',
+                color: 'red',
+                shadow: {
+                    color: 'gray',
+                    width: 10,
+                    offsetX: 0,
+                    offsetY: 0
+                },
+                data: dataPointsTboiler
+            }, {
+                name: 'Flame',
+                type: 'spline',
+                yAxis: 2,
+                color: 'orange',
+                shadow: {
+                    color: 'gray',
+                    width: 10,
+                    offsetX: 0,
+                    offsetY: 0
+                },
+                data: dataPointsFlame
+            }, {
+                name: 'Power',
+                type: 'column',
+                yAxis: 1,
+                color: 'darkorange',
+                data: dataPointsPower
+            }]
+        });
 
-		var updateInterval = 5000;
+        var consumptionChart = new Highcharts.chart('consumptionChartContainer', {
+            title: {
+                text: null
+            },
+            xAxis: {
+                type: 'datetime'
+            },
+            yAxis: [{
+                title: {
+                    text: 'FF work time (s)'
+                },
+                min: 0
+            }],
+            legend: {
+                align: 'right',
+                verticalAlign: 'bottom',
+                borderWidth: 0
+            },
+            series: [{
+                name: 'FF work time',
+                type: 'column',
+                color: 'black',
+                shadow: {
+                    color: 'gray',
+                    width: 10,
+                    offsetX: 0,
+                    offsetY: 0
+                },
+                data: dataPointsFFWorkTime
+            }]
+        });
 
-		var updateInfo = function () {
-		    $.getJSON("/api/getInfo", function (data) {
-		        if (typeof data.SwVer === "undefined") {
-		            $('#spFlame').text('');
-		            $('#spPower').text('');
-		            return;
-		        }
+        var updateInterval = 5000;
 
-		        $('#spFlame').text(data.Flame);
+        var updateInfo = function () {
+            $.getJSON("/api/getInfo", function (data) {
+                if (typeof data.SwVer === "undefined") {
+                    $('#spFlame').text('');
+                    $('#spPower').text('');
+                    return;
+                }
 
-		        var power = '';
-		        switch (data.Power) {
-		            case 0: power = ''; break;
-		            case 1: power = 'Suspend'; break;
-		            case 2: power = 'Power 1'; break;
-		            case 3: power = 'Power 2'; break;
-		            case 4: power = 'Power 3'; break;
-		        };
+                $('#spFlame').text(data.Flame);
 
-		        var status = '';
-		        switch (data.Status) {
-		            case 0: status = 'Idle'; break;
-		            case 1: status = 'Fan Cleaning'; break;
-		            case 2: status = 'Cleaner'; break;
-		            case 3: status = 'Wait'; break;
-		            case 4: status = 'Loading'; break;
-		            case 5: status = 'Heating'; break;
-		            case 6: status = 'Ignition1'; break;
-		            case 7: status = 'Ignition2'; break;
-		            case 8: status = 'Unfolding'; break;
-		            case 9: status = 'Burning'; break;
-		            case 10: status = 'Extinction'; break;
-		        };
+                var power = '';
+                switch (data.Power) {
+                    case 0: power = ''; break;
+                    case 1: power = 'Suspend'; break;
+                    case 2: power = 'Power 1'; break;
+                    case 3: power = 'Power 2'; break;
+                    case 4: power = 'Power 3'; break;
+                };
 
-		        $('#spPower').text(status + (power.length > 0 ? " / " : "") + power);
+                var status = '';
+                switch (data.Status) {
+                    case 0: status = 'Idle'; break;
+                    case 1: status = 'Fan Cleaning'; break;
+                    case 2: status = 'Cleaner'; break;
+                    case 3: status = 'Wait'; break;
+                    case 4: status = 'Loading'; break;
+                    case 5: status = 'Heating'; break;
+                    case 6: status = 'Ignition1'; break;
+                    case 7: status = 'Ignition2'; break;
+                    case 8: status = 'Unfolding'; break;
+                    case 9: status = 'Burning'; break;
+                    case 10: status = 'Extinction'; break;
+                };
+
+                $('#spPower').text(status + (power.length > 0 ? " / " : "") + power);
             });
 
             $.getJSON("/api/getStats", function (data) {
@@ -148,20 +180,30 @@
                     dataPointsTboiler.push([ Date.parse(value.Timestamp), value.Tboiler ]);
                 });
 
-
                 chart.series[0].setData(dataPointsTset, false);
                 chart.series[1].setData(dataPointsTboiler, false);
                 chart.series[2].setData(dataPointsFlame, false);
                 chart.series[3].setData(dataPointsPower, false);
                 chart.redraw();
             });
-		};
 
-		updateInfo();
+            $.getJSON("/api/getConsumptionStats", function (data) {
+                dataPointsFFWorkTime.length = 0;
 
-		// update chart after specified interval
-		setInterval(function () { updateInfo() }, updateInterval);
-	}
+                $.each(data, function (key, value) {
+                    dataPointsFFWorkTime.push([ Date.parse(value.Timestamp), value.FFWorkTime ]);
+                });
+
+                consumptionChart.series[0].setData(dataPointsFFWorkTime, false);
+                consumptionChart.redraw();
+            });
+        };
+
+        updateInfo();
+
+        // update chart after specified interval
+        setInterval(function () { updateInfo() }, updateInterval);
+    }
     </script>
 </head>
 <body>
@@ -196,6 +238,12 @@
                             <div class="panel-heading">Last 2 hours</div>
                             <div class="panel-body">
                                 <div id="chartContainer" style="height: 400px; width: 100%;"></div>
+                            </div>
+                        </div>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Consumption</div>
+                            <div class="panel-body">
+                                <div id="consumptionChartContainer" style="height: 400px; width: 100%;"></div>
                             </div>
                         </div>
                     </div>
