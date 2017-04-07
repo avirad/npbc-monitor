@@ -101,16 +101,24 @@ class SerialProcess(multiprocessing.Process):
                                 
                                 if (isinstance(resetFFWorkTimeCounterCommandResponse, npbc_communication.failResponse)):
                                     print "   -> failed"
-            
+
                                 if (isinstance(resetFFWorkTimeCounterCommandResponse, npbc_communication.successResponse)):
                                     print "   -> success"
+                                    
+                                    params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
+                                              response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
 
-                        params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
-                                   response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
+                                    dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
+                                                           [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                                    dbconn.commit()
 
-                        dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
-                                               [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
-                        dbconn.commit()
+                        else:
+                            params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
+                                      response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
+
+                            dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
+                                                   [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                            dbconn.commit()
 
             except Exception, e1:
                 print "error communicating...: " + str(e1)
