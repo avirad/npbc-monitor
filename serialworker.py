@@ -34,6 +34,8 @@ class SerialProcess(multiprocessing.Process):
                                     0x0D, 0x0E, 0x0F, 0x4C, 0x46, 0x92, 0x93, 0xAC, 0x15, 0x16, 0x41, 0x18, 0x19, 0x1A, 0x1B, 0x31],
                                 [0x5A, 0x5A, 0x1D, 0x16, 0x14, 0x12, 0x55, 0x4C, 0x1B, 0x18, 0x1D, 0x09, 0x09, 0x12, 0x0B, 0x8C,
                                     0x00, 0x00, 0x0F, 0x4C, 0x46, 0x92, 0x93, 0xAC, 0x15, 0x16, 0x41, 0x18, 0x19, 0x1A, 0x1B, 0x31]]
+
+        self.testresetFFWorkTimeCounterCommandResponse = [0x5A, 0x5A, 0x02, 0x34, 0xCA]
         self.BurnerStatus = burnerStatus
 
     def run(self):
@@ -51,7 +53,11 @@ class SerialProcess(multiprocessing.Process):
                 responseData = bytearray(random.choice(self.testGIResponses))
                 n = 0
 
+            resetFFWorkTimeCounterCommandResponseData = bytearray(self.testresetFFWorkTimeCounterCommandResponse)
+
             try:
+                print "exec: generalInformationCommand()"
+
                 time.sleep(0.1)
                 sp.reset_input_buffer()
                 sp.reset_output_buffer()
@@ -66,20 +72,44 @@ class SerialProcess(multiprocessing.Process):
 
                 if (len(responseData) > 0):
                     response = npbc_communication.generalInformationCommand().processResponseData(responseData)
-                    
+
                     self.BurnerStatus.SetBurnerStatus(response)
 
                     if (isinstance(response, npbc_communication.failResponse)):
-                        print "failResponse() received"
+                        print "   -> failed"
 
                     if (isinstance(response, npbc_communication.generalInformationResponse)):
-                        print "generalInformationResponse() received"
+                        print "   -> success"
+
+                        if (response.FFWorkTime > 0):
+                            print "exec: resetFFWorkTimeCounterCommand()"
+
+                            time.sleep(0.1)
+                            sp.reset_input_buffer()
+                            sp.reset_output_buffer()
+
+                            time.sleep(0.1)
+                            resetFFWorkTimeCounterCommandRequestData = npbc_communication.resetFFWorkTimeCounterCommand().getRequestData()
+                            sp.write(resetFFWorkTimeCounterCommandRequestData)
+
+                            time.sleep(0.5)
+                            if (sp.in_waiting > 0):
+                                resetFFWorkTimeCounterCommandResponseData = bytearray(sp.read(sp.in_waiting))
+                                
+                            if (len(responseData) > 0):
+                                resetFFWorkTimeCounterCommandResponse = npbc_communication.resetFFWorkTimeCounterCommand().processResponseData(resetFFWorkTimeCounterCommandResponseData)
+                                
+                                if (isinstance(resetFFWorkTimeCounterCommandResponse, npbc_communication.failResponse)):
+                                    print "   -> failed"
+            
+                                if (isinstance(resetFFWorkTimeCounterCommandResponse, npbc_communication.successResponse)):
+                                    print "   -> success"
 
                         params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
-                                   response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop]
+                                   response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
 
                         dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
-                                               [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                                               [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
                         dbconn.commit()
 
             except Exception, e1:

@@ -32,6 +32,7 @@ class generalInformationResponse(successResponse):
         self.Fan = data[23]
         self.Power = data[24]
         self.ThermostatStop = (data[25] & (1 << 7)) != 0
+        self.FFWorkTime = data[27]
 
 
 class commandBase(object):
@@ -136,6 +137,25 @@ class setBoilerTemperatureCommand(commandBase):
     def processResponseData(self, response):
         try:
             responseData = super(setBoilerTemperatureCommand, self).processResponseData(response)
+        except:
+            self.IsSuccessful = False
+
+        if (self.IsSuccessful == True and len(responseData) == 1 and responseData[0] == 0x34):
+            return successResponse(responseData)
+        else:
+            return failResponse()
+
+
+class resetFFWorkTimeCounterCommand(commandBase):
+    def __init__(self):
+        super(resetFFWorkTimeCounterCommand, self).__init__(0x09)
+
+    def getRequestData(self):
+        return super(resetFFWorkTimeCounterCommand, self).getRequestData(bytearray())
+
+    def processResponseData(self, response):
+        try:
+            responseData = super(resetFFWorkTimeCounterCommand, self).processResponseData(response)
         except:
             self.IsSuccessful = False
 

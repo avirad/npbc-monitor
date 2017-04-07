@@ -69,8 +69,37 @@ class GetStatsHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler], [ThermostatStop] \
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler] \
                           FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-2 hours')")
+
+        result = []
+        rows = cursor.fetchall()
+        for row in rows:
+            d = dict(zip(row.keys(), row))
+            result.append(d)
+
+        self.write(json.dumps(result))
+        self.set_header("Content-Type", "application/json")
+        cursor.connection.close()
+
+
+class GetConsumptionStatsHandler(tornado.web.RequestHandler):
+    def get(self):
+        dbconn = sqlite3.connect(settings.DATABASE)
+        cursor = dbconn.cursor()
+        cursor.row_factory=sqlite3.Row
+        cursor.execute("SELECT datetime(t.[Date]) AS [TimeStamp], \
+                               ifnull((SELECT SUM([FFWorkTime]) \
+                                         FROM [BurnerLogs] AS BL \
+                                        WHERE BL.[TimeStamp] BETWEEN datetime(t.[Date]) AND datetime(t.[Date], '+3599 seconds')), \
+                                      0) as [FFWorkTime] \
+                          FROM (SELECT datetime('now', '-' || (60 * (a.[a] + (10 * b.[a]) + (100 * c.[a]))) || ' minutes') AS [Date] \
+                                  FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a \
+                                 CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS b \
+                                 CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS c \
+                               ) AS t \
+                         WHERE t.[Date] BETWEEN datetime('now', '-24 hours') AND datetime('now') \
+                         ORDER BY t.[Date]")
 
         result = []
         rows = cursor.fetchall()
@@ -103,7 +132,8 @@ def initializeDatabase():
                            [FF] TINYINT NOT NULL, \
                            [Fan] INTEGER NOT NULL, \
                            [Power] INTEGER NOT NULL, \
-                           [ThermostatStop] TINYINT NOT NULL)")
+                           [ThermostatStop] TINYINT NOT NULL, \
+                           [FFWorkTime] INTEGER NOT NULL)")
     dbconn.commit()
 
 if __name__ == '__main__':
@@ -126,7 +156,8 @@ if __name__ == '__main__':
         handlers=[
             (r"/", IndexHandler),
             (r"/api/getInfo", GetInfoHandler),
-            (r"/api/getStats", GetStatsHandler)
+            (r"/api/getStats", GetStatsHandler),
+            (r"/api/getConsumptionStats", GetConsumptionStatsHandler)
         ]
     )
     httpServer = tornado.httpserver.HTTPServer(app)
