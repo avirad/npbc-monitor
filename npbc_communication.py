@@ -94,7 +94,7 @@ class commandBase(object):
             response[i] = response[i] - i + 1
 
         # checksum validation
-        if (data[len(data) - 1] != self.__calculateCheckSum(response) + len(response) - 1):
+        if (data[len(data) - 1] != ((self.__calculateCheckSum(response) + len(response) - 1) & 0xFF)):
             print "Response checksum validation failed"
             return bytearray()
 
