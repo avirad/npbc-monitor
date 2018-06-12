@@ -25,6 +25,7 @@ def initializeDatabase():
                            [Tboiler] INTEGER NOT NULL, \
                            [Flame] INTEGER NOT NULL, \
                            [Heater] TINYINT NOT NULL, \
+			   [DHW] TINYINT NOT NULL, \
                            [CHPump] TINYINT NOT NULL, \
                            [BF] TINYINT NOT NULL, \
                            [FF] TINYINT NOT NULL, \

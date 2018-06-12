@@ -26,6 +26,7 @@ class generalInformationResponse(successResponse):
         self.Tboiler = data[17]
         self.Flame = data[20]
         self.Heater = (data[21] & (1 << 1)) != 0
+	self.DHW    = data[18]
         self.CHPump = (data[21] & (1 << 3)) != 0
         self.BF = (data[21] & (1 << 4)) != 0
         self.FF = (data[21] & (1 << 5)) != 0
@@ -33,7 +34,6 @@ class generalInformationResponse(successResponse):
         self.Power = data[24]
         self.ThermostatStop = (data[25] & (1 << 7)) != 0
         self.FFWorkTime = data[27]
-
 
 class commandBase(object):
     __header = [0x5A, 0x5A]

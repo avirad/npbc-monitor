@@ -103,18 +103,18 @@ class SerialProcess(multiprocessing.Process):
                                     print "   -> success"
 
                                     params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
-                                              response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
+                                              response.Heater, response.CHPump,response.DHW, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
 
                                     dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
-                                                           [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                                                           [Heater],[DHW], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
                                     dbconn.commit()
 
                         else:
                             params = [response.SwVer, response.Date, response.Mode, response.State, response.Status, response.IgnitionFail, response.PelletJam, response.Tset, response.Tboiler, response.Flame,
-                                      response.Heater, response.CHPump, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
+                                      response.Heater, response.CHPump, response.DHW, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
 
                             dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
-                                                   [Heater], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                                                   [Heater], [CHPump], [DHW], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?)", params)
                             dbconn.commit()
 
             except Exception, e1:

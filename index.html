@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>NPBC-Monitor</title>
     <!-- Bootstrap core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/content/bootstrap.min.css" rel="stylesheet">
     <script type="text/javascript">
     window.onload = function () {
 
@@ -13,8 +13,8 @@
         var dataPointsFlame = [];
         var dataPointsTset = [];
         var dataPointsTboiler = [];
-        var dataPointsThermostatStop = [];
         var dataPointsFFWorkTime = [];
+	var dataPointsDHW = [];
 
         Highcharts.setOptions({
             global: {
@@ -95,11 +95,16 @@
                 color: 'darkorange',
                 data: dataPointsPower
             }, {
-                name: 'Thermostat',
+                name: 'DHW',
                 type: 'line',
-                yAxis: 1,
                 color: 'black',
-                data: dataPointsThermostatStop
+		shadow: {
+			color: 'gray',
+			width: 5,
+			offsetX: 0,
+			offsetY: 0,
+		},
+                data: dataPointsDHW
             }]
         });
 
@@ -146,6 +151,8 @@
                 }
 
                 $('#spFlame').text(data[0].Flame);
+		$('#spTBoiler').text(data[0].Tboiler);
+		$('#spTDHW').text(data[0].DHW);
 
                 var power = '';
                 switch (data[0].Power) {
@@ -179,21 +186,21 @@
                 dataPointsFlame.length = 0;
                 dataPointsTset.length = 0;
                 dataPointsTboiler.length = 0;
-                dataPointsThermostatStop.length = 0;
+                dataPointsDHW.length = 0;
 
                 $.each(data, function (key, value) {
                     dataPointsPower.push([ Date.parse(value.Timestamp), value.Power ]);
                     dataPointsFlame.push([ Date.parse(value.Timestamp), value.Flame ]);
                     dataPointsTset.push([ Date.parse(value.Timestamp), value.Tset ]);
                     dataPointsTboiler.push([ Date.parse(value.Timestamp), value.Tboiler ]);
-                    dataPointsThermostatStop.push([ Date.parse(value.Timestamp), value.ThermostatStop * 5 ]);
+                    dataPointsDHW.push([ Date.parse(value.Timestamp), value.DHW ]);
                 });
 
                 chart.series[0].setData(dataPointsTset, false);
                 chart.series[1].setData(dataPointsTboiler, false);
                 chart.series[2].setData(dataPointsFlame, false);
                 chart.series[3].setData(dataPointsPower, false);
-                chart.series[4].setData(dataPointsThermostatStop, false);
+                chart.series[4].setData(dataPointsDHW, false);
                 chart.redraw();
             });
 
@@ -201,7 +208,7 @@
                 dataPointsFFWorkTime.length = 0;
 
                 $.each(data, function (key, value) {
-                    dataPointsFFWorkTime.push([ Date.parse(value.Timestamp), (Math.round(value.FFWorkTime * 0.0101 * 100) / 100) ]);
+                    dataPointsFFWorkTime.push([ Date.parse(value.Timestamp), (Math.round(value.FFWorkTime * 0.0116 * 100) / 100) ]);
                 });
 
                 if (dataPointsFFWorkTime.length > 0) {
@@ -241,9 +248,15 @@
                                     <div class="col">
                                         <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-fire"></span> <span id="spFlame" style="padding-left:10px"> </span></button>
                                     </div>
+				    <div class="col">
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-fire"></span> <span id="spTBoiler" style="padding-left:10px"></span></button>
+                                    </div>
                                     <div class="col">
                                         <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-signal"></span> <span id="spPower" style="padding-left:10px"> </span></button>
                                     </div>
+			    	    <div class="col">
+					<button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-fire"></span> <span id="spTDHW" style="padding-left:10"></span></button>
+				    </div>
                                     <div class="col">
                                         <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-scale"></span> <span id="spConsumption" style="padding-left:10px">0.00 kg / 24h</span></button>
                                     </div>
@@ -253,7 +266,7 @@
                     </div>
                     <div class="col-sm-9">
                         <div class="panel panel-default">
-                            <div class="panel-heading">Last 6 hours</div>
+                            <div class="panel-heading">Last 24 hours</div>
                             <div class="panel-body">
                                 <div id="chartContainer" style="height: 400px; width: 100%;"></div>
                             </div>
@@ -271,8 +284,8 @@
         <div class="tab-pane" id="settings">...</div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="/content/jquery-3.1.1.min.js"></script>
+    <script src="/content/highcharts.js"></script>
+    <script src="/content/bootstrap.min.js"></script>
 </body>
 </html>

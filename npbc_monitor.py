@@ -13,6 +13,7 @@ import tornado.web
 import tornado.websocket
 import tornado.gen
 from tornado.options import define, options
+import tornado.web as web
 import npbc_communication
 
 define("port", default=settings.WEB_UI_PORT, help="run on the given port", type=int)
@@ -27,7 +28,7 @@ class GetInfoHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT [SwVer], [Power], [Flame], [Tset], [Tboiler], [State], [Status] \
+        cursor.execute("SELECT [SwVer], [Power], [Flame], [Tset], [Tboiler], [State], [Status], [DHW] \
                           FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-1 minutes') ORDER BY [Timestamp] DESC LIMIT 1")
 
         result = []
@@ -46,8 +47,8 @@ class GetStatsHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler], [ThermostatStop] \
-                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-6 hours')")
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler], [DHW], [ThermostatStop] \
+                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-24 hours')")
 
         result = []
         rows = cursor.fetchall()
@@ -110,6 +111,7 @@ def initializeDatabase():
                            [Tboiler] INTEGER NOT NULL, \
                            [Flame] INTEGER NOT NULL, \
                            [Heater] TINYINT NOT NULL, \
+			   [DHW] TINYINT NOT NULL, \
                            [CHPump] TINYINT NOT NULL, \
                            [BF] TINYINT NOT NULL, \
                            [FF] TINYINT NOT NULL, \
@@ -130,7 +132,8 @@ if __name__ == '__main__':
             (r"/", IndexHandler),
             (r"/api/getInfo", GetInfoHandler),
             (r"/api/getStats", GetStatsHandler),
-            (r"/api/getConsumptionStats", GetConsumptionStatsHandler)
+            (r"/api/getConsumptionStats", GetConsumptionStatsHandler),
+	    (r"/content/(.*)", web.StaticFileHandler, {'path': '/opt/npbc-monitor/content'}),
         ]
     )
     httpServer = tornado.httpserver.HTTPServer(app)
