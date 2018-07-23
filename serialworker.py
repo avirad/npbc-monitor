@@ -106,7 +106,7 @@ class SerialProcess(multiprocessing.Process):
                                               response.Heater, response.CHPump,response.DHW, response.BF, response.FF, response.Fan, response.Power, response.ThermostatStop, response.FFWorkTime]
 
                                     dbconn.execute("INSERT INTO [BurnerLogs] ([Timestamp], [SwVer], [Date], [Mode], [State], [Status], [IgnitionFail], [PelletJam], [Tset], [Tboiler], [Flame], \
-                                                           [Heater],[DHW], [CHPump], [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
+                                                           [Heater],[CHPump],[DHW],  [BF], [FF], [Fan], [Power], [ThermostatStop], [FFWorkTime]) VALUES (datetime(), ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params)
                                     dbconn.commit()
 
                         else:

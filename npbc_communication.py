@@ -26,7 +26,7 @@ class generalInformationResponse(successResponse):
         self.Tboiler = data[17]
         self.Flame = data[20]
         self.Heater = (data[21] & (1 << 1)) != 0
-	self.DHW    = data[18]
+		self.DHW    = data[18]
         self.CHPump = (data[21] & (1 << 3)) != 0
         self.BF = (data[21] & (1 << 4)) != 0
         self.FF = (data[21] & (1 << 5)) != 0
