@@ -120,4 +120,4 @@ class SerialProcess(multiprocessing.Process):
             except Exception, e1:
                 print "error communicating...: " + str(e1)
 
-            time.sleep(5)
+            time.sleep(15)
