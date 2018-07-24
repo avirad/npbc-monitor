@@ -16,16 +16,19 @@
         var dataPointsFFWorkTime = [];
 	var dataPointsDHW = [];
 
-        Highcharts.setOptions({
-            global: {
-                useUTC: true
-            }
-        });
+//        Highcharts.setOptions({
+//            global: {
+//                useUTC: true
+//            }
+//        });
 
         var chart = new Highcharts.chart('chartContainer', {
             title: {
                 text: null
             },
+	    time: {
+		useUTC: true
+	    },
             xAxis: {
                 type: 'datetime'
             },
@@ -108,7 +111,11 @@
             }]
         });
 
-        var consumptionChart = new Highcharts.chart('consumptionChartContainer', {
+        var consumptionChart = new Highcharts.chart('consumptionChartContainer', {		
+    	    time: {
+		useUTC: true,
+		timezoneOffset: -180
+	    },
             title: {
                 text: null
             },
