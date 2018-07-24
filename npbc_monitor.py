@@ -29,7 +29,7 @@ class GetInfoHandler(tornado.web.RequestHandler):
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
         cursor.execute("SELECT [SwVer], [Power], [Flame], [Tset], [Tboiler], [State], [Status], [DHW] \
-                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-1 minutes') ORDER BY [Timestamp] DESC LIMIT 1")
+                          FROM [BurnerLogs] WHERE [Date] >= datetime('now', '-1 minutes') ORDER BY [Date] DESC LIMIT 1")
 
         result = []
         rows = cursor.fetchall()
@@ -47,8 +47,8 @@ class GetStatsHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler], [DHW], [ThermostatStop] \
-                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-24 hours')")
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Date]) AS [Date], [Power], [Flame], [Tset], [Tboiler], [DHW], [ThermostatStop] \
+                          FROM [BurnerLogs] WHERE [Date] >= datetime('now', '-24 hours')")
 
         result = []
         rows = cursor.fetchall()
