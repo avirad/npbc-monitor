@@ -189,11 +189,11 @@
                 dataPointsDHW.length = 0;
 
                 $.each(data, function (key, value) {
-                    dataPointsPower.push([ Date.parse(value.Timestamp), value.Power ]);
-                    dataPointsFlame.push([ Date.parse(value.Timestamp), value.Flame ]);
-                    dataPointsTset.push([ Date.parse(value.Timestamp), value.Tset ]);
-                    dataPointsTboiler.push([ Date.parse(value.Timestamp), value.Tboiler ]);
-                    dataPointsDHW.push([ Date.parse(value.Timestamp), value.DHW ]);
+                    dataPointsPower.push([ Date.parse(value.Date), value.Power ]);
+                    dataPointsFlame.push([ Date.parse(value.Date), value.Flame ]);
+                    dataPointsTset.push([ Date.parse(value.Date), value.Tset ]);
+                    dataPointsTboiler.push([ Date.parse(value.Date), value.Tboiler ]);
+                    dataPointsDHW.push([ Date.parse(value.Date), value.DHW ]);
                 });
 
                 chart.series[0].setData(dataPointsTset, false);
