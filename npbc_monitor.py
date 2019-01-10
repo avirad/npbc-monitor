@@ -162,7 +162,7 @@ if __name__ == '__main__':
     initializeDatabase()
 
     tornado.options.parse_command_line()
-    currDir = os.path.abspath(__file__)
+    currDir = os.path.dirname( os.path.abspath(__file__))
     app = tornado.web.Application(
         handlers=[
             (r"/", IndexHandler),
@@ -170,7 +170,7 @@ if __name__ == '__main__':
             (r"/api/getStats", GetStatsHandler),
             (r"/api/getConsumptionStats", GetConsumptionStatsHandler),
             (r"/api/getConsumptionByMonth", GetConsumptionByMonthHandler),
-	    (r"/content/(.*)", web.StaticFileHandler, {'path': currDir + './content'}),
+	    (r"/content/(.*)", web.StaticFileHandler, {'path': currDir + '/content'}),
         ]
     )
     httpServer = tornado.httpserver.HTTPServer(app)
