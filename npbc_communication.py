@@ -132,7 +132,7 @@ class setBoilerTemperatureCommand(commandBase):
         self.__boilerTemperature = boilerTemperature
 
     def getRequestData(self):
-        return super(setBoilerTemperatureCommand, self).getRequestData(bytearray(self.__boilerTemperature))
+        return super(setBoilerTemperatureCommand, self).getRequestData(bytearray([self.__boilerTemperature]))
 
     def processResponseData(self, response):
         try:
