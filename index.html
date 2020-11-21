@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>NPBC-Monitor</title>
     <!-- Bootstrap core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/content/bootstrap.min.css" rel="stylesheet">
     <script type="text/javascript">
     window.onload = function () {
 
@@ -13,18 +13,22 @@
         var dataPointsFlame = [];
         var dataPointsTset = [];
         var dataPointsTboiler = [];
-        var dataPointsThermostatStop = [];
         var dataPointsFFWorkTime = [];
+		var dataPointsDHW = [];
+        var dataPointsMonthlyUsage = [];
 
-        Highcharts.setOptions({
-            global: {
-                useUTC: false
-            }
-        });
+//        Highcharts.setOptions({
+//            global: {
+//                useUTC: true
+//            }
+//        });
 
         var chart = new Highcharts.chart('chartContainer', {
             title: {
                 text: null
+            },
+            time: {
+            useUTC: false
             },
             xAxis: {
                 type: 'datetime'
@@ -95,15 +99,60 @@
                 color: 'darkorange',
                 data: dataPointsPower
             }, {
-                name: 'Thermostat',
+                name: 'DHW',
                 type: 'line',
-                yAxis: 1,
                 color: 'black',
-                data: dataPointsThermostatStop
+		shadow: {
+			color: 'gray',
+			width: 5,
+			offsetX: 0,
+			offsetY: 0,
+		},
+                data: dataPointsDHW
             }]
         });
 
-        var consumptionChart = new Highcharts.chart('consumptionChartContainer', {
+        var monthlyConsumptionChart = new Highcharts.chart('monthlyConsumptionChartContainer', {
+            time : {
+                useUTC: true,
+                timezoneOffset: -180
+            },
+            title: {
+                text: null,
+            },
+            xAxis: {
+                type: 'datetime'
+            },
+            yAxis: [{
+                title: {
+                    text: 'Consumption per month (kg)'
+                    },
+                    min: 0
+            }],
+            legend: {
+                align: 'right',
+                verticalAlign: 'bottom',
+                borderWidth: 0
+            },
+            series: [{
+                name: 'Monthly Consumption (kg)',
+                type: 'column',
+                color: 'black',
+                shadow: {
+                    color: 'gray',
+                    width: 5,
+                    offsetX: 0,
+                    offsetY: 0
+                },
+                data: dataPointsMonthlyUsage
+            }]
+        });
+
+        var consumptionChart = new Highcharts.chart('consumptionChartContainer', {		
+    	    time: {
+		useUTC: true,
+		timezoneOffset: -180
+	    },
             title: {
                 text: null
             },
@@ -135,10 +184,15 @@
             }]
         });
 
-        var updateInterval = 10000;
+        var updateInterval = 15000;
+
+        var kgPerHour = 30;
+        var feedTime = kgPerHour / 3600;
 
         var updateInfo = function () {
+            
             $.getJSON("/api/getInfo", function (data) {
+                console.log("begin Info")
                 if (data == null || data.length == 0 || typeof data[0].SwVer === "undefined") {
                     $('#spFlame').text('');
                     $('#spPower').text('');
@@ -146,6 +200,8 @@
                 }
 
                 $('#spFlame').text(data[0].Flame);
+		        $('#spTBoiler').text(data[0].Tboiler);
+		        $('#spTDHW').text(data[0].DHW);
 
                 var power = '';
                 switch (data[0].Power) {
@@ -172,49 +228,83 @@
                 };
 
                 $('#spPower').text(status + (power.length > 0 ? " / " : "") + power);
-            });
 
-            $.getJSON("/api/getStats", function (data) {
-                dataPointsPower.length = 0;
-                dataPointsFlame.length = 0;
-                dataPointsTset.length = 0;
-                dataPointsTboiler.length = 0;
-                dataPointsThermostatStop.length = 0;
+                console.log("end Info")      
+            });   
 
-                $.each(data, function (key, value) {
-                    dataPointsPower.push([ Date.parse(value.Timestamp), value.Power ]);
-                    dataPointsFlame.push([ Date.parse(value.Timestamp), value.Flame ]);
-                    dataPointsTset.push([ Date.parse(value.Timestamp), value.Tset ]);
-                    dataPointsTboiler.push([ Date.parse(value.Timestamp), value.Tboiler ]);
-                    dataPointsThermostatStop.push([ Date.parse(value.Timestamp), value.ThermostatStop * 5 ]);
-                });
+            var ts;
 
-                chart.series[0].setData(dataPointsTset, false);
-                chart.series[1].setData(dataPointsTboiler, false);
-                chart.series[2].setData(dataPointsFlame, false);
-                chart.series[3].setData(dataPointsPower, false);
-                chart.series[4].setData(dataPointsThermostatStop, false);
-                chart.redraw();
-            });
+            if (dataPointsPower != null & dataPointsPower.length > 0) {
+                ts = dataPointsPower[dataPointsPower.length - 1][0] / 1000;
+            }else {
+                ts = "null"; 
+            }
+                       
+            $.getJSON("/api/getStats",  {timestamp: ts } ).done( function (data) {
+                    console.log("begin getStats");
+                    // Do not clean, just update with new data
+                    //dataPointsPower.length = 0;
+                    //dataPointsFlame.length = 0;
+                    //dataPointsTset.length = 0;
+                    //dataPointsTboiler.length = 0;
+                    //dataPointsDHW.length = 0;
+                    
+                    // TODO: think how to shift these
+                    if(data.length > dataPointsPower.length) {
+                        for (i = 0; i < data.length; i++) {
+                            dataPointsPower.shift();
+                            dataPointsFlame.shift();
+                            dataPointsTset.shift();
+                            dataPointsTboiler.shift();
+                            dataPointsDHW.shift();
+                        }
+                    }                    
 
-            $.getJSON("/api/getConsumptionStats", function (data) {
-                dataPointsFFWorkTime.length = 0;
+                    $.each(data, function (key, value) {                          
+                        dataPointsPower.push([ moment(value.Date).valueOf(), value.Power ]);                        
+                        dataPointsFlame.push([ moment(value.Date).valueOf(), value.Flame ]);                        
+                        dataPointsTset.push([ moment(value.Date).valueOf(), value.Tset ]);                        
+                        dataPointsTboiler.push([ moment(value.Date).valueOf(), value.Tboiler ]);                        
+                        dataPointsDHW.push([ moment(value.Date).valueOf(), value.DHW ]);
+                    });
 
-                $.each(data, function (key, value) {
-                    dataPointsFFWorkTime.push([ Date.parse(value.Timestamp), (Math.round(value.FFWorkTime * 0.0101 * 100) / 100) ]);
-                });
+                    chart.series[0].setData(dataPointsTset, false);
+                    chart.series[1].setData(dataPointsTboiler, false);
+                    chart.series[2].setData(dataPointsFlame, false);
+                    chart.series[3].setData(dataPointsPower, false);
+                    chart.series[4].setData(dataPointsDHW, false);
+                    chart.redraw();
 
-                if (dataPointsFFWorkTime.length > 0) {
-                    $('#spConsumption').text(dataPointsFFWorkTime[dataPointsFFWorkTime.length - 1][1] + ' kg / 24h');
-                    dataPointsFFWorkTime.pop();
-                }
+                    $.getJSON("/api/getConsumptionStats", function (data) {
+                    dataPointsFFWorkTime.length = 0;
 
-                consumptionChart.series[0].setData(dataPointsFFWorkTime, false);
-                consumptionChart.redraw();
-            });
+                    $.each(data, function (key, value) {
+                        dataPointsFFWorkTime.push([ Date.parse(value.Timestamp), (Math.round(value.FFWorkTime * feedTime * 100) / 100) ]);
+                    });
+
+                    if (dataPointsFFWorkTime.length > 0) {
+                        $('#spConsumption').text(dataPointsFFWorkTime[dataPointsFFWorkTime.length - 1][1] + ' kg / 24h');
+                        dataPointsFFWorkTime.pop();
+                    }
+
+                    consumptionChart.series[0].setData(dataPointsFFWorkTime, false);
+                    consumptionChart.redraw();
+                    });
+                });        
         };
 
-        updateInfo();
+        $.getJSON("/api/getConsumptionByMonth", function(data){
+            dataPointsMonthlyUsage.length = 0;
+        
+            $.each(data, function(key, value) {
+                dataPointsMonthlyUsage.push([Date.parse(value.yr_mon), Math.round (value.FFWork * feedTime )]);
+            });
+                
+            monthlyConsumptionChart.series[0].setData(dataPointsMonthlyUsage, false);
+            monthlyConsumptionChart.redraw();
+        });
+
+        updateInfo();        
 
         // update chart after specified interval
         setInterval(function () { updateInfo() }, updateInterval);
@@ -239,13 +329,19 @@
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col">
-                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-fire"></span> <span id="spFlame" style="padding-left:10px"> </span></button>
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px">Flame: <span id="spFlame" style="padding-left:10px"> </span></button>
+                                    </div>
+				    <div class="col">
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px">TBoiler:  <span id="spTBoiler" style="padding-left:10px"></span></button>
                                     </div>
                                     <div class="col">
-                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-signal"></span> <span id="spPower" style="padding-left:10px"> </span></button>
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px">Power: <span id="spPower" style="padding-left:10px"> </span></button>
                                     </div>
+			    	    <div class="col">
+					<button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px">TDHW: <span id="spTDHW" style="padding-left:10"></span></button>
+				    </div>
                                     <div class="col">
-                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px"><span class="glyphicon glyphicon-scale"></span> <span id="spConsumption" style="padding-left:10px">0.00 kg / 24h</span></button>
+                                        <button type="button" class="btn btn-default btn-md btn-block" style="text-align:left; padding-left:20px">Consumption: <span id="spConsumption" style="padding-left:10px">0.00 kg / 24h</span></button>
                                     </div>
                                 </div>
                             </div>
@@ -253,7 +349,7 @@
                     </div>
                     <div class="col-sm-9">
                         <div class="panel panel-default">
-                            <div class="panel-heading">Last 6 hours</div>
+                            <div class="panel-heading">Last 24 hours</div>
                             <div class="panel-body">
                                 <div id="chartContainer" style="height: 400px; width: 100%;"></div>
                             </div>
@@ -264,15 +360,44 @@
                                 <div id="consumptionChartContainer" style="height: 200px; width: 100%;"></div>
                             </div>
                         </div>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Monthly Consumption</div>
+                            <div class="panel-body">
+                                <div id="monthlyConsumptionChartContainer" style="height: 200px; width: 100%;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="tab-pane" id="settings">...</div>
+        <div class="tab-pane" id="settings">
+            <div class="container-fluid" style="padding-top:10px">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <div class="panel panel-default">
+                                <div class="panel-heading">Burner Options</div>
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <label>Start / Stop Burner </label>
+                                            <input type="button" />
+                                            <br>
+                                            <label>Temperature: </Label>
+                                            <input />
+                                            <button id="submitTemp" />
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+        </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="/content/jquery-3.3.1.min.js"></script>
+    <script src="/content/moment.min.js"></script>
+    <script src="/content/highcharts.js"></script>
+    <script src="/content/bootstrap.min.js"></script>    
 </body>
 </html>

@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import os
 import time
@@ -6,6 +7,7 @@ import multiprocessing
 from multiprocessing.managers import BaseManager
 import json
 import sqlite3
+from datetime import datetime, date, time
 import settings
 import tornado.httpserver
 import tornado.ioloop
@@ -13,6 +15,7 @@ import tornado.web
 import tornado.websocket
 import tornado.gen
 from tornado.options import define, options
+import tornado.web as web
 import npbc_communication
 
 define("port", default=settings.WEB_UI_PORT, help="run on the given port", type=int)
@@ -27,8 +30,8 @@ class GetInfoHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT [SwVer], [Power], [Flame], [Tset], [Tboiler], [State], [Status] \
-                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-1 minutes') ORDER BY [Timestamp] DESC LIMIT 1")
+        cursor.execute("SELECT [SwVer], [Power], [Flame], [Tset], [Tboiler], [State], [Status], [DHW] \
+                          FROM [BurnerLogs] WHERE [Date] >= datetime('now', '-1 minutes') ORDER BY [Date] DESC LIMIT 1")
 
         result = []
         rows = cursor.fetchall()
@@ -46,8 +49,17 @@ class GetStatsHandler(tornado.web.RequestHandler):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', [Timestamp]) AS [Timestamp], [Power], [Flame], [Tset], [Tboiler], [ThermostatStop] \
-                          FROM [BurnerLogs] WHERE [Timestamp] >= datetime('now', '-6 hours')")
+
+        timestamp = self.get_argument('timestamp', None)        
+        print timestamp
+
+        if ( timestamp == "null"):
+            cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power], [Flame], [Tset], [Tboiler], [DHW], [ThermostatStop] \
+                          FROM [BurnerLogs] WHERE [Date] >= datetime('now', '-24 hours')")
+        else:            
+            timestamp = datetime.fromtimestamp(float(timestamp))
+            cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%f', [Date]) AS [Date], [Power], [Flame], [Tset], [Tboiler], [DHW], [ThermostatStop] \
+                          FROM [BurnerLogs] WHERE [Date] >=:tstamp", {"tstamp": timestamp})
 
         result = []
         rows = cursor.fetchall()
@@ -59,13 +71,37 @@ class GetStatsHandler(tornado.web.RequestHandler):
         self.set_header("Content-Type", "application/json")
         cursor.connection.close()
 
+class GetConsumptionByMonthHandler(tornado.web.RequestHandler):
+    def get(self):
+        dbconn = sqlite3.connect(settings.DATABASE)
+        cursor = dbconn.cursor()
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT strftime('%Y-%m', [Date]) AS yr_mon, sum([FFWorkTime]) as FFWork \
+                        FROM BurnerLogs \
+                        GROUP BY yr_mon;")
+        result = []
+        rows = cursor.fetchall()
+        for row in rows:
+            d = dict(zip(row.keys(), row))
+            result.append(d)
+
+        self.write(json.dumps(result))
+        self.set_header("Content-Type", "application/json")
+        cursor.connection.close()
+
+
+# Work by hours
+# SELECT sum(FFWorkTime), strftime ('%H',Date) hour
+# FROM BurnerLogs
+# GROUP BY strftime ('%H',Date)
+
 
 class GetConsumptionStatsHandler(tornado.web.RequestHandler):
     def get(self):
         dbconn = sqlite3.connect(settings.DATABASE)
         cursor = dbconn.cursor()
         cursor.row_factory=sqlite3.Row
-        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(t.[Date])) AS [Timestamp], \
+        cursor.execute("SELECT strftime('%Y-%m-%dT%H:%M:%f', datetime(t.[Date])) AS [Timestamp], \
                                ifnull((SELECT SUM([FFWorkTime]) \
                                          FROM [BurnerLogs] AS BL \
                                         WHERE BL.[TimeStamp] BETWEEN datetime(t.[Date]) AND datetime(t.[Date], '+3599 seconds')), \
@@ -77,7 +113,7 @@ class GetConsumptionStatsHandler(tornado.web.RequestHandler):
                                ) AS t \
                          WHERE t.[Date] BETWEEN datetime('now', '-' || strftime('%M', 'now') || ' minutes', '-' || strftime('%S', 'now') || ' seconds', '-24 hours') AND datetime('now', '-' || strftime('%M', 'now') || ' minutes', '-' || strftime('%S', 'now') || ' seconds') \
                         UNION ALL \
-                        SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime('now')) AS [Timestamp], \
+                        SELECT strftime('%Y-%m-%dT%H:%M:%f', datetime('now')) AS [Timestamp], \
                                ifnull((SELECT SUM([FFWorkTime]) \
                                          FROM [BurnerLogs] AS BL \
                                         WHERE BL.[TimeStamp] BETWEEN datetime('now', '-' || strftime('%M', 'now') || ' minutes', '-' || strftime('%S', 'now') || ' seconds', '-24 hours') AND datetime('now', '-' || strftime('%M', 'now') || ' minutes', '-' || strftime('%S', 'now') || ' seconds')), \
@@ -110,6 +146,7 @@ def initializeDatabase():
                            [Tboiler] INTEGER NOT NULL, \
                            [Flame] INTEGER NOT NULL, \
                            [Heater] TINYINT NOT NULL, \
+			   [DHW] TINYINT NOT NULL, \
                            [CHPump] TINYINT NOT NULL, \
                            [BF] TINYINT NOT NULL, \
                            [FF] TINYINT NOT NULL, \
@@ -125,12 +162,15 @@ if __name__ == '__main__':
     initializeDatabase()
 
     tornado.options.parse_command_line()
+    currDir = os.path.dirname( os.path.abspath(__file__))
     app = tornado.web.Application(
         handlers=[
             (r"/", IndexHandler),
             (r"/api/getInfo", GetInfoHandler),
             (r"/api/getStats", GetStatsHandler),
-            (r"/api/getConsumptionStats", GetConsumptionStatsHandler)
+            (r"/api/getConsumptionStats", GetConsumptionStatsHandler),
+            (r"/api/getConsumptionByMonth", GetConsumptionByMonthHandler),
+	    (r"/content/(.*)", web.StaticFileHandler, {'path': currDir + '/content'}),
         ]
     )
     httpServer = tornado.httpserver.HTTPServer(app)
